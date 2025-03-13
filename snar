@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# DOTREPO="https://github.com/johannesHHM/buerice"
+
+# needed for whiptail --infobox to work under xterm like terminals
+TERM=ansi
+
+SCRIPTDIR="$(dirname "$0")"
+RICEREPO='https://github.com/johannesHHM/vandringsmann.git'
+
+pexit() {
+	echo "User exited!"
+	exit 1
+}
+
+dialog_msg() {
+	whiptail --title 'SNAR installation' --msgbox "$1" 8 50 3>&1 1>&2 2>&3
+}
+
+dialog_info() {
+	whiptail --title 'SNAR installation' --infobox "$1" 8 50 3>&1 1>&2 2>&3
+}
+
+dialog_yesno() {
+	whiptail --title 'SNAR installation' --yesno "$1" 8 50 3>&1 1>&2 2>&3
+}
+
+dialog_input() {
+	if ! tmp=$(whiptail --title 'SNAR installation' --inputbox "$2" 8 50 3>&1 1>&2 2>&3) ; then
+		exit 3
+	fi
+	#TODO test for spaces
+	eval "$1=$tmp"
+}
+
+dialog_pass() {
+	if ! tmp=$(whiptail --title 'SNAR installation' --passwordbox "$2" 8 50 3>&1 1>&2 2>&3) ; then
+		exit 3
+	fi
+	eval "$1=$tmp"
+}
+
+installpkg() {
+	dialog_info "Installing '$1' ..."
+	pacman --noconfirm --needed -S "$1" >/dev/null 2>&1
+}
+
+get_new_user() {
+	while true ; do
+		if [ -z $setname ] ; then
+			dialog_input name 'Enter username' || pexit
+			[ -z "$name" ] && dialog_msg 'Username can not be expty, please try again' && continue
+			if id "$name" >/dev/null 2>&1 ; then
+				dialog_yesno "User with name '$name' already exists, install files too existing user?" || continue
+				userexists=true
+			fi
+		fi
+		setname=true
+
+		dialog_pass pass 'Enter password' || pexit
+		dialog_pass passconf 'Confirm password' || pexit
+		[ ! "$pass" = "$passconf" ] && dialog_msg 'Non-matching passwords, please try again' && continue
+		[ -z "$pass" ] && dialog_msg 'Password can not be empty, please try again' && continue
+
+		break
+	done
+	unset setname passconf
+}
+
+setup_user() {
+	dialog_info "Setting up user '$name' ..."
+	USERHOME="/home/$name"
+	if [ -z "$userexists" ] ; then 
+		useradd -m "$name" >/dev/null 2>&1
+		rm "$USERHOME/.bash"* # delete generated bash files
+	fi
+	echo "$name:$pass" | chpasswd
+	usermod -a -G wheel "$name"
+
+}
+
+gitmakeinstall() {
+	progname=$(echo "$1" | sed 's/.*\/\([^\/]*\)\.git/\1/')
+	SOURCEDIR="$USERDIR/.local/source"
+	mkdir -p "$SOURCEDIR"
+	git clone "$1" "$SOURCEDIR/$progname"
+	cd "$SOURCEDIR/$progname"
+	make >/dev/null 2>&1
+	make install >/dev/null 2>&1
+}
+
+install_progs() {
+	while IFS=, read -r tag prog ; do
+		case "$tag" in
+			#"A") aurinstall "$program" "$comment" ;;
+			"G") gitmakeinstall "$prog" ;;
+			*) installpkg "$prog" ;;
+		esac
+	done <"$SCRIPTDIR/progs.csv"
+}
+
+install_dots() {
+	dialog_info "Installing dot files for '$name' ..."
+	git clone "$RICEREPO" '/tmp/snar/dots' >/dev/null 2>&1
+	cp -r '/tmp/snar/dots/'. "$USERHOME"
+	rm -r "$USERHOME/.git/"
+	chown -R "$name:$name" "$USERHOME"
+}
+
+run_posthooks() {
+	for script in "$SCRIPTDIR/hooks/"* ; do
+		dialog_info "Running post-hook script '$script' ..."
+		"$script"
+	done
+}
+
+[ "$EUID" -ne 0 ] && echo "error, snar must be run as root" && exit 1
+
+pacman --noconfirm --needed -Syu # sync and update system
+pacman --noconfirm --needed -S libnewt # install whiptail for dialogs
+
+for prog in git base-devel ; do
+	installpkg $prog
+done
+
+mkdir /tmp/snar # temporary dir for cloning into
+
+# allow wheel to sudo
+echo "%wheel ALL=(ALL:ALL) ALL" >/etc/sudoers.d/00-wheel-all
+
+get_new_user
+setup_user
+
+install_progs
+
+install_dots
+
+rm -rf /tmp/snar # delete temporary dir

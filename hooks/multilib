@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sed -i '/^#\[multilib\]/,/^$/s/^#//g' /etc/pacman.conf
+
+exit 0

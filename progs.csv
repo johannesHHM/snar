@@ -1,0 +1,8 @@
+,xorg-server
+,xorg-xinit
+,ttf-fira-code
+,libxft
+,libxinerama
+G,https://github.com/johannesHHM/dwm.git
+G,https://github.com/johannesHHM/st.git
+G,git@github.com:johannesHHM/dmenu.git

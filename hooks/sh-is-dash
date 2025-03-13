@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# set sh -> dash
+ln -sfT dash /usr/bin/sh
+
+# make /etc/pacman.s/hooks/ a pacman hook dir
+sed -i 's/^#HookDir.*/HookDir = \/etc\/pacman.d\/hooks/g' /etc/pacman.conf
+
+# make pacman hook for sh -> dash on bash updates
+[ ! -d "/etc/pacman.d/hooks" ] && mkdir "/etc/pacman.d/hooks"
+
+echo "[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = bash
+
+[Action]
+Description = Re-pointing /bin/sh symlink to dash...
+When = PostTransaction
+Exec = /usr/bin/ln -sfT dash /usr/bin/sh
+Depends = dash" >/etc/pacman.d/hooks/00-sh-dash.hook
+
+exit 0
