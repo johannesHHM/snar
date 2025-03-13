@@ -5,7 +5,7 @@
 # needed for whiptail --infobox to work under xterm like terminals
 TERM=ansi
 
-SCRIPTDIR="$(dirname "$0")"
+SCRIPTDIR="$(dirname $(realpath "$0"))"
 RICEREPO='https://github.com/johannesHHM/vandringsmann.git'
 
 pexit() {
@@ -138,5 +138,7 @@ install_dots
 echo 'if [ "$EUID" -ne 0 ]; then
   source "$HOME/.config/bash/bashrc"
 fi'>>/etc/bash.bashrc
+
+run_posthooks
 
 rm -rf /tmp/snar # delete temporary dir
