@@ -135,10 +135,8 @@ install_progs
 
 install_dots
 
-echo "if [ "$EUID" -ne 0 ]; then
+echo 'if [ "$EUID" -ne 0 ]; then
   source "$HOME/.config/bash/bashrc"
-else
-  PS1='\033[31m[\u \033[93m\W\033[0m\033[31m]\$ \033[0m'
-fi">>/etc/bash.bashrc
+fi'>>/etc/bash.bashrc
 
 rm -rf /tmp/snar # delete temporary dir
