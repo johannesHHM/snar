@@ -1,8 +1,13 @@
 ,xorg-server
 ,xorg-xinit
+,xorg-xwallpaper
+,xcompmgr
 ,ttf-fira-code
 ,libxft
 ,libxinerama
+,libnotify
+,dunst
+,openbsd-netcat
 G,https://github.com/johannesHHM/dwm.git
 G,https://github.com/johannesHHM/st.git
 G,https://github.com:johannesHHM/dmenu.git
