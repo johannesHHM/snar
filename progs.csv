@@ -5,6 +5,7 @@
 ,ttf-fira-code
 ,libxft
 ,libxinerama
+,imagemagick
 ,libnotify
 ,dunst
 ,openbsd-netcat
