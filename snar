@@ -81,9 +81,11 @@ setup_user() {
 
 gitmakeinstall() {
 	progname=$(echo "$1" | sed 's/.*\/\([^\/]*\)\.git/\1/')
-	SOURCEDIR="$USERDIR/.local/source"
-	mkdir -p "$SOURCEDIR"
-	git clone "$1" "$SOURCEDIR/$progname"
+	dialog_info "Installing '$progname' from source ..."
+	SOURCEDIR="$USERHOME/.local/source"
+	[ ! -d "$SOURCEDIR" ] && mkdir -p "$SOURCEDIR"
+	[ ! -d "$SOURCEDIR"/$progname/.git/ ] && \
+		git clone "$1" "$SOURCEDIR/$progname" >/dev/null 2>&1
 	cd "$SOURCEDIR/$progname"
 	make >/dev/null 2>&1
 	make install >/dev/null 2>&1
@@ -116,8 +118,8 @@ run_posthooks() {
 
 [ "$EUID" -ne 0 ] && echo "error, snar must be run as root" && exit 1
 
-pacman --noconfirm --needed -Syu # sync and update system
-pacman --noconfirm --needed -S libnewt # install whiptail for dialogs
+# pacman --noconfirm --needed -Syu # sync and update system
+pacman --noconfirm --needed -Sy libnewt # install whiptail for dialogs
 
 for prog in git base-devel ; do
 	installpkg $prog
