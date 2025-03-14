@@ -3,6 +3,7 @@
 ,xorg-xwallpaper
 ,xorg-xrandr
 ,xcompmgr
+,xlip
 ,ttf-fira-code
 ,libxft
 ,libxinerama
@@ -10,6 +11,7 @@
 ,libnotify
 ,dunst
 ,dash
+,scrot
 ,pipewire
 ,wireplumber
 ,openbsd-netcat
