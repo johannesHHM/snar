@@ -132,7 +132,6 @@ get_new_user
 setup_user
 
 install_progs
-
 install_dots
 
 echo 'if [ "$EUID" -ne 0 ]; then
