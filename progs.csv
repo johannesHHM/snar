@@ -1,6 +1,7 @@
 ,xorg-server
 ,xorg-xinit
 ,xorg-xwallpaper
+,xorg-xrandr
 ,xcompmgr
 ,ttf-fira-code
 ,libxft
@@ -9,6 +10,8 @@
 ,libnotify
 ,dunst
 ,dash
+,pipewire
+,wireplumber
 ,openbsd-netcat
 G,https://github.com/johannesHHM/dwm.git
 G,https://github.com/johannesHHM/st.git

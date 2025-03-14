@@ -53,6 +53,10 @@ get_new_user() {
 			if id "$name" >/dev/null 2>&1 ; then
 				dialog_yesno "User with name '$name' already exists, install files too existing user?" || continue
 				userexists=true
+				if ! dialog_yesno "Create new password for '$name'?" ; then
+					nopass=true
+					break
+				fi
 			fi
 		fi
 		setname=true
@@ -74,7 +78,7 @@ setup_user() {
 		useradd -m "$name" >/dev/null 2>&1
 		rm "$USERHOME/.bash"* # delete generated bash files
 	fi
-	echo "$name:$pass" | chpasswd
+	[ -z "$nopass" ] && echo "$name:$pass" | chpasswd
 	usermod -a -G wheel "$name"
 
 }
@@ -134,11 +138,14 @@ get_new_user
 setup_user
 
 install_progs
+
 install_dots
 
+if ! grep -q '$HOME/.config/bash/bashrc' /etc/bash.bashrc ; then
 echo 'if [ "$EUID" -ne 0 ]; then
-  source "$HOME/.config/bash/bashrc"
+source "$HOME/.config/bash/bashrc"
 fi'>>/etc/bash.bashrc
+fi
 
 run_posthooks
 
