@@ -1,0 +1,4 @@
+sh-is-dash,Symlink /bin/sh too dash,ON,dash
+enable-multilib,Enables the multilib repository for pacman,OFF,
+xconf-touchpad,Enables natural scrolling for touchpads,ON,
+xconf-keyboard,Sets key repeat rate and norwegian keyboard,ON,

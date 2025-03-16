@@ -2,53 +2,49 @@
 
 # DOTREPO="https://github.com/johannesHHM/buerice"
 
-# needed for whiptail --infobox to work under xterm like terminals
-TERM=ansi
-
 SCRIPTDIR="$(dirname $(realpath "$0"))"
 RICEREPO='https://github.com/johannesHHM/vandringsmann.git'
 
-pexit() {
-	echo "User exited!"
-	exit 1
-}
+DIALOG_TITLE='SNAR installation'
+export DIALOGRC="$SCRIPTDIR/dialogrc"
+
+TMPDIR='/tmp/snar'
 
 dialog_msg() {
-	whiptail --title 'SNAR installation' --msgbox "$1" 8 50 3>&1 1>&2 2>&3
+	dialog --title "$DIALOG_TITLE" --msgbox "$1" 8 78 3>&1 1>&2 2>&3
 }
 
 dialog_info() {
-	whiptail --title 'SNAR installation' --infobox "$1" 8 50 3>&1 1>&2 2>&3
+	dialog --title "$DIALOG_TITLE" --infobox "$1" 8 78 3>&1 1>&2 2>&3
 }
 
 dialog_yesno() {
-	whiptail --title 'SNAR installation' --yesno "$1" 8 50 3>&1 1>&2 2>&3
+	dialog --title "$DIALOG_TITLE" --yesno "$1" 8 78 3>&1 1>&2 2>&3
 }
 
 dialog_input() {
-	if ! tmp=$(whiptail --title 'SNAR installation' --inputbox "$2" 8 50 3>&1 1>&2 2>&3) ; then
-		exit 3
+	if ! tmp=$(dialog --title "$DIALOG_TITLE" --inputbox "$2" 8 78 3>&1 1>&2 2>&3) ; then
+		exit 7
 	fi
 	#TODO test for spaces
 	eval "$1=$tmp"
 }
 
 dialog_pass() {
-	if ! tmp=$(whiptail --title 'SNAR installation' --passwordbox "$2" 8 50 3>&1 1>&2 2>&3) ; then
-		exit 3
+	if ! tmp=$(dialog --title "$DIALOG_TITLE" --passwordbox "$2" 8 78 3>&1 1>&2 2>&3) ; then
+		exit 7
 	fi
 	eval "$1=$tmp"
 }
 
 installpkg() {
-	dialog_info "Installing '$1' ..."
-	pacman --noconfirm --needed -S "$1" >/dev/null 2>&1
+	pacman --noconfirm --needed -S "$@" >/dev/null 2>&1
 }
 
 get_new_user() {
 	while true ; do
 		if [ -z $setname ] ; then
-			dialog_input name 'Enter username' || pexit
+			dialog_input name 'Enter username' || exit 3
 			[ -z "$name" ] && dialog_msg 'Username can not be expty, please try again' && continue
 			if id "$name" >/dev/null 2>&1 ; then
 				dialog_yesno "User with name '$name' already exists, install files too existing user?" || continue
@@ -61,8 +57,8 @@ get_new_user() {
 		fi
 		setname=true
 
-		dialog_pass pass 'Enter password' || pexit
-		dialog_pass passconf 'Confirm password' || pexit
+		dialog_pass pass 'Enter password' || exit 3
+		dialog_pass passconf 'Confirm password' || exit 3
 		[ ! "$pass" = "$passconf" ] && dialog_msg 'Non-matching passwords, please try again' && continue
 		[ -z "$pass" ] && dialog_msg 'Password can not be empty, please try again' && continue
 
@@ -85,7 +81,7 @@ setup_user() {
 
 gitmakeinstall() {
 	progname=$(echo "$1" | sed 's/.*\/\([^\/]*\)\.git/\1/')
-	dialog_info "Installing '$progname' from source ..."
+	dialog_info "Installing '$progname' ($n/$total) from source ..."
 	SOURCEDIR="$USERHOME/.local/source"
 	[ ! -d "$SOURCEDIR" ] && mkdir -p "$SOURCEDIR"
 	[ ! -d "$SOURCEDIR"/$progname/.git/ ] && \
@@ -93,43 +89,73 @@ gitmakeinstall() {
 	cd "$SOURCEDIR/$progname"
 	make >/dev/null 2>&1
 	make install >/dev/null 2>&1
+	unset $progname
 }
 
 install_progs() {
+	total="$(wc -l < "$SCRIPTDIR/progs.csv")"
 	while IFS=, read -r tag prog ; do
+		n=$((n + 1))
 		case "$tag" in
 			#"A") aurinstall "$program" "$comment" ;;
 			"G") gitmakeinstall "$prog" ;;
-			*) installpkg "$prog" ;;
-		esac
+			*) dialog_info "Installing '$prog' ($n/$total) ..." ; installpkg "$prog" ;;
+			esac
 	done <"$SCRIPTDIR/progs.csv"
+	unset total n tag prog
 }
 
 install_dots() {
 	dialog_info "Installing dot files for '$name' ..."
-	git clone "$RICEREPO" '/tmp/snar/dots' >/dev/null 2>&1
-	cp -r '/tmp/snar/dots/'. "$USERHOME"
+	git clone "$RICEREPO" "$TMPDIR/dots" >/dev/null 2>&1
+	cp -r "$TMPDIR/dots/". "$USERHOME"
 	rm -r "$USERHOME/.git/"
 	chown -R "$name:$name" "$USERHOME"
 }
 
 run_posthooks() {
-	for script in "$SCRIPTDIR/hooks/"* ; do
-		dialog_info "Running post-hook script '$script' ..."
-		"$script"
+	while IFS=, read -r script desc toggle deps ; do
+		depends="$depends
+$script,$deps"
+		set -- "$@" "$script" "$desc" "$toggle"
+	done <"$SCRIPTDIR/hooks.csv"
+	
+	scripts="$(dialog --title "$DIALOG_TITLE" \
+		--checklist 'Choose hooks too run' 18 78 11 \
+		"$@" 3>&1 1>&2 2>&3)" || exit 1
+
+	total="$(echo "$scripts" | wc -w)"
+	for script in $scripts ; do
+		n=$((n + 1))
+		deps="$(echo "$depends" | sed -n "/^$script/{s/^[^,]*,\(.*\)/\1/p}")"
+		if [ -n "$deps" ] ; then
+			dialog_info "Installing dependencies: $deps\nneeded for hook '$script' ($n/$total) ..."
+			installpkg $deps
+		fi
+		dialog_info "Running post-hook script '$script' ($n/$total) ..."
+		"$SCRIPTDIR/hooks/$script" >/dev/null 2>&1 || \
+			dialog_msg "ERROR: could not find script '$script' in hooks dir, Ok to continue ..."
 	done
+	unset script desc toggle deps depends scripts n
 }
 
-[ "$EUID" -ne 0 ] && echo "error, snar must be run as root" && exit 1
+[ "$(id -u)" -ne 0 ] && echo "error, snar must be run as root" && exit 1
+
+if [ -e $TMPDIR ] ; then
+	dialog_yesno "Temporary directory '$TMPDIR' already exists, delete it too continue?" || \
+		exit 3
+fi
+
+mkdir "$TMPDIR" # temporary dir for cloning into
+trap "rm -rf $TMPDIR" HUP INT QUIT TERM PWR EXIT
 
 # pacman --noconfirm --needed -Syu # sync and update system
-pacman --noconfirm --needed -Sy libnewt # install whiptail for dialogs
+pacman --noconfirm --needed -Sy dialog >/dev/null 2>&1 # install dialog for dialogs
 
 for prog in git base-devel ; do
-	installpkg $prog
+	dialog_info "Installing '$prog' needed for installation ..."
+	installpkg "$prog"
 done
-
-mkdir /tmp/snar # temporary dir for cloning into
 
 # allow wheel to sudo
 echo "%wheel ALL=(ALL:ALL) ALL" >/etc/sudoers.d/00-wheel-all
@@ -141,10 +167,12 @@ install_progs
 
 install_dots
 
-mkdir -p "$USERHOME/.config/systemd/user/default.target.wants"
-mkdir -p "$USERHOME/.config/systemd/user/sockets.target.wants"
-ln -s /usr/lib/systemd/user/pipewire-pulse.service "$USERHOME/.config/systemd/user/default.target.wants/pipewire-pulse.service"
-ln -s /usr/lib/systemd/user/pipewire-pulse.socket "$USERHOME/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+SYSD_USERDIR="$USERHOME/.config/systemd/user"
+mkdir -p "$SYSD_USERDIR/default.target.wants" "$SYSD_USERDIR/sockets.target.wants"
+[ ! -e "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service" ] && \
+	ln -s /usr/lib/systemd/user/pipewire-pulse.service "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service"
+[ ! -e "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket" ] && \
+	ln -s /usr/lib/systemd/user/pipewire-pulse.socket "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket"
 chown -R "$name:$name" "$USERHOME/.config/systemd"
 
 # source bashrc in .config
@@ -154,6 +182,13 @@ source "$HOME/.config/bash/bashrc"
 fi'>>/etc/bash.bashrc
 fi
 
+# disable beeper
+rmmod pcspkr >/dev/null 2>&1
+echo "blacklist pcspkr" >/etc/modprobe.d/nobeep.conf
+
 run_posthooks
 
-rm -rf /tmp/snar # delete temporary dir
+rm -rf "$TMPDIR" # delete temporary dir
+
+dialog_msg "Installation succesfully* completed!\n\n\n* unless an unforseen error has occurred!"
+

@@ -1,10 +1,12 @@
 #!/bin/sh
 
 echo 'Section "InputClass"
-        Identifier "touchpad"
+        Identifier "libinput touchpad catchall"
         MatchIsTouchpad "true"
         MatchDriver "libinput"
         Option "NaturalScrolling" "true"
+        Option "Tapping" "on"
+        Option "TappingButtonMap" "lrm"
 EndSection'>/etc/X11/xorg.conf.d/10-touchpad.conf
 
 exit 0
