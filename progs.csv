@@ -12,11 +12,6 @@
 ,dunst
 ,less
 ,scrot
-,pipewire
-,pipewire-alsa
-,pipewire-jack
-,pipewire-pulse
-,wireplumber
 ,openbsd-netcat
 ,firefox
 ,vim

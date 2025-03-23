@@ -119,7 +119,7 @@ run_posthooks() {
 $script,$deps"
 		set -- "$@" "$script" "$desc" "$toggle"
 	done <"$SCRIPTDIR/hooks.csv"
-	
+
 	scripts="$(dialog --title "$DIALOG_TITLE" \
 		--checklist 'Choose hooks too run' 18 78 11 \
 		"$@" 3>&1 1>&2 2>&3)" || exit 1
@@ -166,14 +166,6 @@ setup_user
 install_progs
 
 install_dots
-
-SYSD_USERDIR="$USERHOME/.config/systemd/user"
-mkdir -p "$SYSD_USERDIR/default.target.wants" "$SYSD_USERDIR/sockets.target.wants"
-[ ! -e "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service" ] && \
-	ln -s /usr/lib/systemd/user/pipewire-pulse.service "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service"
-[ ! -e "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket" ] && \
-	ln -s /usr/lib/systemd/user/pipewire-pulse.socket "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket"
-chown -R "$name:$name" "$USERHOME/.config/systemd"
 
 # source bashrc in .config
 if ! grep -q '$HOME/.config/bash/bashrc' /etc/bash.bashrc ; then
