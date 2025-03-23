@@ -174,11 +174,10 @@ source "$HOME/.config/bash/bashrc"
 fi'>>/etc/bash.bashrc
 fi
 
-# disable beeper
-rmmod pcspkr >/dev/null 2>&1
-echo "blacklist pcspkr" >/etc/modprobe.d/nobeep.conf
-
 run_posthooks
+
+# make sure user owns everything in their directory
+chown -R "$name:$name" "$USERHOME/"
 
 rm -rf "$TMPDIR" # delete temporary dir
 

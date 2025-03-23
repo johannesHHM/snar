@@ -1,4 +1,5 @@
 sh-is-dash,Symlink /bin/sh too dash,ON,dash
+no-beep,Disables kernel module pcspkr (beeper),ON,
 pipewire,Enable pipewire audio,ON,pipewire pipewire-alsa pipewire-jack pipewire-pulse wireplumber
 enable-multilib,Enables the multilib repository for pacman,OFF,
 xconf-touchpad,Enables natural scrolling for touchpads,ON,

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# uncomments multilib line
 sed -i '/^#\[multilib\]/,/^$/s/^#//g' /etc/pacman.conf
 pacman -Sy
 

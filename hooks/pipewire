@@ -1,10 +1,13 @@
 #!/bin/sh
 
+# make systemd user config
 SYSD_USERDIR="$USERHOME/.config/systemd/user"
 mkdir -p "$SYSD_USERDIR/default.target.wants" "$SYSD_USERDIR/sockets.target.wants"
+
+# enable pipewire service
 [ ! -e "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service" ] && \
 	ln -s /usr/lib/systemd/user/pipewire-pulse.service "$SYSD_USERDIR/default.target.wants/pipewire-pulse.service"
 [ ! -e "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket" ] && \
 	ln -s /usr/lib/systemd/user/pipewire-pulse.socket "$SYSD_USERDIR/sockets.target.wants/pipewire-pulse.socket"
-chown -R "$name:$name" "$USERHOME/.config/systemd"
 
+exit 0
