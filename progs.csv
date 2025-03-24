@@ -13,7 +13,6 @@
 ,less
 ,scrot
 ,openbsd-netcat
-,firefox
 ,vim
 G,https://github.com/johannesHHM/dwm.git
 G,https://github.com/johannesHHM/st.git
