@@ -3,8 +3,9 @@
 ,xorg-xrandr
 ,xwallpaper
 ,xcompmgr
-,xlip
+,xclip
 ,ttf-fira-code
+,ttf-nerd-fonts-symbols-mono
 ,libxft
 ,libxinerama
 ,imagemagick
@@ -12,6 +13,7 @@
 ,dunst
 ,less
 ,scrot
+,unclutter
 ,openbsd-netcat
 ,vim
 G,https://github.com/johannesHHM/dwm.git
