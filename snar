@@ -173,6 +173,8 @@ source "$HOME/.config/bash/bashrc"
 fi'>>/etc/bash.bashrc
 fi
 
+export name USERHOME
+
 run_posthooks
 
 # make sure user owns everything in their directory
