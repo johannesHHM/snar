@@ -164,7 +164,6 @@ get_new_user
 setup_user
 
 install_progs
-
 install_dots
 
 # source bashrc in .config
@@ -182,4 +181,3 @@ chown -R "$name:$name" "$USERHOME/"
 rm -rf "$TMPDIR" # delete temporary dir
 
 dialog_msg "Installation succesfully* completed!\n\n\n* unless an unforseen error has occurred!"
-
